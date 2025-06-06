@@ -4,32 +4,40 @@ import random
 import os
 import time
 
+
 # 读取设置文件
 def read_settings(file_path):
     settings = {}
     try:
+        # 打开设置文件并逐行读取键值对
         with open(file_path, 'r', encoding='utf-8') as file:
             for line in file:
                 key, value = line.strip().split("=")
                 settings[key] = value
     except Exception as e:
+        # 如果读取失败，显示错误消息框
         messagebox.showerror("错误", f"无法读取设置文件: {e}")
     return settings
+
 
 # 写入设置文件
 def write_settings(file_path, settings):
     try:
+        # 将设置字典写入文件，每行一个键值对
         with open(file_path, 'w', encoding='utf-8') as file:
             for key, value in settings.items():
                 file.write(f"{key}={value}\n")
     except Exception as e:
+        # 如果写入失败，显示错误消息框
         messagebox.showerror("错误", f"无法写入设置文件: {e}")
+
 
 # 打开设置窗口
 def open_settings():
     global settings, choice_list
+    # 创建一个新的顶级窗口用于设置
     settings_window = tk.Toplevel(root)
-    settings_window.title("设置")
+    settings_window.title("设置    by晓炙云溪")
     settings_window.geometry("550x140")  # 调整窗口宽度以容纳新布局
 
     # 设置项：奖池路径（路径）
@@ -39,66 +47,79 @@ def open_settings():
     pool_path_entry.insert(0, settings.get("pool_path", ""))
     pool_path_entry.grid(row=0, column=1, padx=10, pady=5)
 
+    # 浏览按钮，用于选择奖池文件
     def browse_pool_path():
         path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
         if path:
             pool_path_entry.delete(0, tk.END)
             pool_path_entry.insert(0, path)
 
-    browse_button = tk.Button(settings_window, text="浏览", command=browse_pool_path, font=("Arial", 12), width=8, height=1)
+    browse_button = tk.Button(settings_window, text="浏览", command=browse_pool_path, font=("Arial", 12), width=8,
+                              height=1)
     browse_button.grid(row=0, column=2, pady=5)
 
-    # 保存设置
+    # 保存设置按钮的回调函数
     def save_settings():
         try:
-
+            # 更新设置并写入文件
             settings["pool_path"] = pool_path_entry.get()
             write_settings(settings_file_path, settings)
             initialize_choice_list()  # 重新初始化奖池
             messagebox.showinfo("成功", "设置已保存！")
             settings_window.destroy()
         except Exception as e:
+            # 如果保存失败，显示错误消息框
             messagebox.showerror("错误", f"保存设置失败: {e}")
 
     save_button = tk.Button(settings_window, text="保存", command=save_settings, font=("Arial", 14), width=10, height=2)
     save_button.grid(row=2, column=1, pady=10)
 
+
 # 初始化奖池
 def initialize_choice_list():
     global choice_list, settings
     pool_path = settings.get("pool_path", "")
+    # 检查奖池路径是否有效
     if not pool_path or not os.path.exists(pool_path):
         messagebox.showerror("错误", "奖池路径无效，请检查设置！")
         return []
 
     try:
+        # 读取奖池文件内容并初始化抽奖列表
         with open(pool_path, 'r', encoding='utf-8') as file:
             choices = file.read().splitlines()
         choice_list = choices.copy()
     except Exception as e:
+        # 如果读取失败，显示错误消息框
         messagebox.showerror("错误", f"无法读取奖池文件: {e}")
         return []
+
 
 # 转盘动画
 def roll_animation(choices, winner):
     global rolling
     rolling = True
+    # 禁用所有按钮以防止重复点击
     for button in [quick_pick_button, wheel_pick_button, multi_pick_button, settings_button]:
-        button.config(state=tk.DISABLED)  # 禁用其他按钮
-    for i in range(30):  # 模拟30次滚动
+        button.config(state=tk.DISABLED)
+    # 模拟30次滚动效果
+    for i in range(30):
         if not rolling:
             break
         result_label.config(text=f"滚动中... {random.choice(choices)}")
         root.update()
         time.sleep(0.05 * (i // 10 + 1))  # 滚动速度逐渐变慢
     result_label.config(text=f"抽取结果: {winner}")
+    # 启用所有按钮
     for button in [quick_pick_button, wheel_pick_button, multi_pick_button, settings_button]:
-        button.config(state=tk.NORMAL)  # 启用其他按钮
+        button.config(state=tk.NORMAL)
     rolling = False
+
 
 # 快速抽取
 def quick_pick():
     global choice_list, settings
+    # 检查抽奖列表是否为空
     if not choice_list:
         messagebox.showwarning("警告", "抽奖列表为空，请检查文件内容！")
         return
@@ -106,16 +127,15 @@ def quick_pick():
     winner = random.choice(choice_list)
     result_label.config(text=f"抽取结果: {winner}")
 
-    # 如果不允许重复抽取，则移除已获奖者
-    if settings.get("allow_repeat", "True") == "False":
-        choice_list.remove(winner)
 
 # 转盘抽取
 def wheel_pick():
     global choice_list, settings, rolling
+    # 检查抽奖列表是否为空
     if not choice_list:
         messagebox.showwarning("警告", "抽奖列表为空，请检查文件内容！")
         return
+    # 检查是否已经有转盘在滚动
     if rolling:
         messagebox.showwarning("警告", "转盘正在滚动，请稍后再试！")
         return
@@ -123,9 +143,6 @@ def wheel_pick():
     winner = random.choice(choice_list)
     roll_animation(choice_list, winner)
 
-    # 如果不允许重复抽取，则移除已获奖者
-    if settings.get("allow_repeat", "True") == "False":
-        choice_list.remove(winner)
 
 # 多人抽取函数（使用 random.sample() 确保无重复）
 def multi_pick():
@@ -142,6 +159,7 @@ def multi_pick():
         if multi_pick_count < 1:
             raise ValueError
     except ValueError:
+        # 如果输入无效，显示错误消息框
         messagebox.showerror("错误", "多人抽取数量无效，请输入有效的数字！")
         return
 
@@ -157,9 +175,11 @@ def multi_pick():
     result_text = "\n".join(results)
     messagebox.showinfo("多人抽取结果", f"抽取结果如下：\n{result_text}")
 
+
 # 初始化GUI
 def init_gui():
     global root, result_label, choice_list, settings, settings_file_path, rolling, multi_pick_count_entry
+    # 创建主窗口
     root = tk.Tk()
     root.title("抽奖系统    by晓炙云溪")
     root.geometry("500x500")
@@ -215,6 +235,7 @@ def init_gui():
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     choice_list = []  # 全局变量存储抽奖列表

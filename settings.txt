@@ -1,0 +1,1 @@
+pool_path=C:/Users/dgsjk/PyCharmMiscProject/ChoiceBox/ChoiceList/学生名单.txt
